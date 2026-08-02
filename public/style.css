@@ -1,123 +1,99 @@
-:root {
-  --bg: #0b0b0d;
-  --bg-alt: #131215;
-  --card: #18171b;
-  --card-hover: #201f24;
-  --red: #c8203a;
-  --gold: #d4af37;
-  --text: #ede9e4;
-  --muted: #8d8a92;
-  --line: #2a292e;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  // Search handling
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
-::selection { background: var(--red); color: #fff; }
-a { color: inherit; text-decoration: none; }
+  if (searchInput && searchResults) {
+    let timeout = null;
 
-/* Header */
-#header { position: sticky; top: 0; z-index: 50; background: rgba(11, 11, 13, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-.header-inner { max-width: 1200px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.logo { font-family: 'Black Han Sans', sans-serif; font-size: 26px; letter-spacing: 1px; cursor: pointer; }
-.logo span { color: var(--red); }
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(timeout);
+      const query = e.target.value.trim();
 
-.nav-links { display: flex; gap: 16px; }
-.nav-links a { color: var(--muted); font-weight: 700; font-size: 14px; padding: 6px 12px; transition: .15s; border-bottom: 2px solid transparent; }
-.nav-links a.active, .nav-links a:hover { color: var(--text); border-bottom-color: var(--red); }
+      if (query.length < 2) {
+        searchResults.innerHTML = '';
+        searchResults.classList.remove('active');
+        return;
+      }
 
-/* Search Box */
-.search-box { position: relative; flex: 1; max-width: 360px; }
-.search-box input { width: 100%; background: var(--bg-alt); border: 1px solid var(--line); color: var(--text); padding: 10px 14px; font-family: 'Noto Sans KR'; font-size: 14px; outline: none; border-radius: 4px; }
-.search-box input:focus { border-color: var(--red); }
-#search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--card); border: 1px solid var(--line); max-height: 420px; overflow-y: auto; z-index: 60; display: none; border-radius: 4px; }
-#search-results.show { display: block; }
-.sr-item { display: flex; gap: 10px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line); }
-.sr-item:hover { background: var(--card-hover); }
-.sr-item img { width: 36px; height: 54px; object-fit: cover; background: var(--bg-alt); flex-shrink: 0; }
-.sr-item .sr-meta { font-size: 12px; color: var(--muted); }
-.sr-item .sr-title { font-weight: 700; font-size: 13px; color: var(--text); }
+      timeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
 
-/* Main Content */
-#main { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 24px; }
+          if (!data.results || data.results.length === 0) {
+            searchResults.innerHTML = '<div style="padding: 15px; text-align: center; font-size: 13px; color: #b3b3b3;">Няма намерени резултати</div>';
+            searchResults.classList.add('active');
+            return;
+          }
 
-/* Grid & Poster Styles (Sesuai dengan template render Anda) */
-.media-grid, .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 18px;
-  margin-top: 16px;
-  margin-bottom: 32px;
-}
+          searchResults.innerHTML = data.results.map(item => `
+            <a href="/${item.type}/${item.id}/${encodeURIComponent(item.slug)}" class="search-item">
+              <img src="${item.poster}" alt="${item.title}">
+              <div class="search-item-info">
+                <div class="s-title">${item.title}</div>
+                <div class="s-year">${item.type === 'movie' ? 'Филм' : 'Сериал'} · ${item.year || 'Няма дата'}</div>
+              </div>
+            </a>
+          `).join('');
 
-.poster-card {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  transition: transform .18s;
-}
+          searchResults.classList.add('active');
+        } catch (err) {
+          console.error(err);
+        }
+      }, 300);
+    });
 
-.poster-card:hover {
-  transform: translateY(-4px);
-}
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.remove('active');
+      }
+    });
+  }
 
-.poster-img-wrap {
-  position: relative;
-  aspect-ratio: 2 / 3;
-  background: var(--card);
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
+  // Season & Episode accordion handling
+  const seasonList = document.getElementById('season-list');
+  if (seasonList) {
+    seasonList.addEventListener('click', async (e) => {
+      const item = e.target.closest('.season-item');
+      if (!item) return;
 
-.poster-card:hover .poster-img-wrap {
-  border-color: var(--red);
-}
+      item.classList.toggle('open');
+      const panel = item.querySelector('.episode-panel');
 
-.poster-img-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+      if (item.classList.contains('open') && panel.innerHTML.trim() === '') {
+        const tvId = item.dataset.tv;
+        const seasonNumber = item.dataset.season;
 
-.poster-rating {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(0, 0, 0, 0.75);
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  z-index: 2;
-}
+        panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #b3b3b3; font-size: 13px;">Зареждане на епизодите...</div>';
 
-.poster-title {
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
-}
+        try {
+          const res = await fetch(`/api/season/${tvId}/${seasonNumber}`);
+          const data = await res.json();
 
-.poster-year {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
+          if (!data.episodes || data.episodes.length === 0) {
+            panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #b3b3b3; font-size: 13px;">Няма налични епизоди.</div>';
+            return;
+          }
 
-/* Footer */
-#footer { border-top: 1px solid var(--line); padding: 24px; margin-top: auto; background: var(--bg-alt); }
-.footer-inner { max-width: 1200px; margin: 0 auto; text-align: center; color: var(--muted); font-size: 12px; }
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .header-inner { flex-wrap: wrap; gap: 12px; }
-  .search-box { order: 3; max-width: 100%; width: 100%; }
-  .media-grid, .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-  #main { padding: 16px; }
-}
+          panel.innerHTML = `
+            <div class="episode-grid">
+              ${data.episodes.map(ep => `
+                <div class="episode-card">
+                  <img src="${ep.still}" alt="${ep.name}" loading="lazy">
+                  <div class="episode-info">
+                    <div class="episode-title">${ep.number}. ${ep.name}</div>
+                    <div class="episode-meta">Излъчен на: ${ep.airDate || 'Неизвестно'} · ★ ${ep.rating}</div>
+                    <div class="episode-overview">${ep.overview ? ep.overview.slice(0, 120) + (ep.overview.length > 120 ? '...' : '') : 'Няма описания за този епизод.'}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } catch (err) {
+          panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #e50914; font-size: 13px;">Грешка при зареждане.</div>';
+        }
+      }
+    });
+  }
+});
