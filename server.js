@@ -1,12 +1,11 @@
 const express = require('express');
 const path = require('path');
 const { tmdb, img, slugify } = require('./lib/tmdb');
-const { head, layout, posterCard, genreRow, trailerBlock, castGrid, escapeHtml, movieJsonLd, tvJsonLd, sideBannerAd, nativeBannerAd, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
+const { head, layout, posterCard, genreRow, trailerBlock, castGrid, escapeHtml, movieJsonLd, tvJsonLd, sideBannerAd, nativeBannerAd, detailTitle, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// TODO: заменете с крайния домейн след деплой в Railway
 const SITE_URL = process.env.SITE_URL || 'https://cinebox-bg.up.railway.app';
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -25,13 +24,6 @@ const ROWS = {
     { key: '04', title: 'Излъчвани в момента сериали', path: '/tv/on_the_air' },
   ],
 };
-
-// ---------- SEO заглавие и описание (един и същ модел за ВСИЧКИ страници с детайли) ----------
-function seoTitle(kind, title, year) {
-  const label = kind === 'movie' ? 'Филм' : 'Сериал';
-  const y = year || 'неизвестна година';
-  return `[${label}] ${title} (${y}) Сюжет, Оценка, Актьорски Състав и Трейлър`;
-}
 
 function seoDescription(title, year, genreNames) {
   const yearPart = year ? `${year} година, ` : '';
@@ -139,7 +131,7 @@ app.get('/movie/:id/:slug?', async (req, res) => {
     `;
 
     const headHtml = head({
-      title: seoTitle('movie', data.title, (data.release_date || '').slice(0, 4)),
+      title: detailTitle(data, 'movie'),
       description: seoDescription(data.title, (data.release_date || '').slice(0, 4), (data.genres || []).map(g => g.name).join(', ')),
       url: `${SITE_URL}/movie/${id}/${encodeURIComponent(correctSlug)}`,
       image: img(data.backdrop_path || data.poster_path, 'w780'),
@@ -225,7 +217,7 @@ app.get('/tv/:id/:slug?', async (req, res) => {
     `;
 
     const headHtml = head({
-      title: seoTitle('tv', data.name, (data.first_air_date || '').slice(0, 4)),
+      title: detailTitle(data, 'tv'),
       description: seoDescription(data.name, (data.first_air_date || '').slice(0, 4), (data.genres || []).map(g => g.name).join(', ')),
       url: `${SITE_URL}/tv/${id}/${encodeURIComponent(correctSlug)}`,
       image: img(data.backdrop_path || data.poster_path, 'w780'),
