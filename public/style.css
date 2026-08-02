@@ -1,178 +1,123 @@
-const SITE_NAME = 'CineBox';
-const DEFAULT_TITLE = 'CineBox · Онлайн Филми и Сериали';
-const DEFAULT_DESC = 'Гледайте актуални филми и сериали онлайн с български субтитри.';
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return str
-    .toString()
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+:root {
+  --bg: #0b0b0d;
+  --bg-alt: #131215;
+  --card: #18171b;
+  --card-hover: #201f24;
+  --red: #c8203a;
+  --gold: #d4af37;
+  --text: #ede9e4;
+  --muted: #8d8a92;
+  --line: #2a292e;
 }
 
-function head({ title = DEFAULT_TITLE, description = DEFAULT_DESC, url = '', image = '', type = 'website', robots = 'index, follow' }) {
-  return `
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(title)}</title>
-    <meta name="description" content="${escapeHtml(description)}">
-    <meta name="robots" content="${escapeHtml(robots)}">
-    <link rel="canonical" href="${url}">
-    <meta property="og:title" content="${escapeHtml(title)}">
-    <meta property="og:description" content="${escapeHtml(description)}">
-    <meta property="og:type" content="${escapeHtml(type)}">
-    <meta property="og:url" content="${url}">
-    ${image ? `<meta property="og:image" content="${escapeHtml(image)}">` : ''}
-    <link rel="stylesheet" href="/style.css">
-  `;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+::selection { background: var(--red); color: #fff; }
+a { color: inherit; text-decoration: none; }
+
+/* Header */
+#header { position: sticky; top: 0; z-index: 50; background: rgba(11, 11, 13, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.header-inner { max-width: 1200px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.logo { font-family: 'Black Han Sans', sans-serif; font-size: 26px; letter-spacing: 1px; cursor: pointer; }
+.logo span { color: var(--red); }
+
+.nav-links { display: flex; gap: 16px; }
+.nav-links a { color: var(--muted); font-weight: 700; font-size: 14px; padding: 6px 12px; transition: .15s; border-bottom: 2px solid transparent; }
+.nav-links a.active, .nav-links a:hover { color: var(--text); border-bottom-color: var(--red); }
+
+/* Search Box */
+.search-box { position: relative; flex: 1; max-width: 360px; }
+.search-box input { width: 100%; background: var(--bg-alt); border: 1px solid var(--line); color: var(--text); padding: 10px 14px; font-family: 'Noto Sans KR'; font-size: 14px; outline: none; border-radius: 4px; }
+.search-box input:focus { border-color: var(--red); }
+#search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--card); border: 1px solid var(--line); max-height: 420px; overflow-y: auto; z-index: 60; display: none; border-radius: 4px; }
+#search-results.show { display: block; }
+.sr-item { display: flex; gap: 10px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line); }
+.sr-item:hover { background: var(--card-hover); }
+.sr-item img { width: 36px; height: 54px; object-fit: cover; background: var(--bg-alt); flex-shrink: 0; }
+.sr-item .sr-meta { font-size: 12px; color: var(--muted); }
+.sr-item .sr-title { font-weight: 700; font-size: 13px; color: var(--text); }
+
+/* Main Content */
+#main { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 24px; }
+
+/* Grid & Poster Styles (Sesuai dengan template render Anda) */
+.media-grid, .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+  margin-bottom: 32px;
 }
 
-function layout({ headHtml, bodyHtml, activeTab = 'movie' }) {
-  return `<!DOCTYPE html>
-<html lang="bg">
-<head>
-  ${headHtml}
-</head>
-<body>
-  <header id="header">
-    <div class="header-inner">
-      <a class="logo" href="/">Cine<span>Box</span></a>
-      <div class="search-wrap">
-        <input type="text" id="search-input" placeholder="Търсене на филми и сериали..." autocomplete="off">
-        <div id="search-results" class="search-results"></div>
-      </div>
-      <nav class="tabs">
-        <button class="tab-btn ${activeTab === 'movie' ? 'active' : ''}" onclick="location.href='/movie'">Филми</button>
-        <button class="tab-btn ${activeTab === 'tv' ? 'active' : ''}" onclick="location.href='/tv'">Сериали</button>
-      </nav>
-    </div>
-  </header>
-  <main>
-    ${bodyHtml}
-  </main>
-  <footer>
-    <p>&copy; ${new Date().getFullYear()} CineBox. Всички права запазени.</p>
-  </footer>
-  <script src="/script.js"></script>
-</body>
-</html>`;
+.poster-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform .18s;
 }
 
-function posterCard(item, tab = 'movie') {
-  const title = item.title || item.name || 'media';
-  const itemSlug = slugify(title) || 'details';
-  const urlPath = `/${tab}/${item.id}/${encodeURIComponent(itemSlug)}`;
-  const rating = item.vote_average ? item.vote_average.toFixed(1) : '-';
-  const year = (item.release_date || item.first_air_date || '').slice(0, 4);
-
-  return `
-    <a href="${urlPath}" class="poster-card">
-      <div class="poster-frame">
-        <img src="${img(item.poster_path)}" alt="${escapeHtml(title)}" loading="lazy">
-        <div class="poster-badge">★ ${rating}</div>
-      </div>
-      <div class="poster-title">${escapeHtml(title)}</div>
-      <div class="poster-sub">${year}</div>
-    </a>
-  `;
+.poster-card:hover {
+  transform: translateY(-4px);
 }
 
-function genreRow(genres = []) {
-  if (!genres.length) return '';
-  return `<div class="genre-row">${genres.map(g => `<span class="genre-pill">${escapeHtml(g.name)}</span>`).join('')}</div>`;
+.poster-img-wrap {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  background: var(--card);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
 }
 
-function trailerBlock(videos = {}) {
-  const results = videos.results || [];
-  const trailer = results.find(v => v.type === 'Trailer' && v.site === 'YouTube') || results.find(v => v.site === 'YouTube');
-  if (!trailer) return '<div class="no-trailer">Няма наличен трейлър.</div>';
-  return `
-    <div class="trailer-wrap">
-      <iframe src="https://www.youtube-nocookie.com/embed/${escapeHtml(trailer.key)}" title="YouTube trailer" allowfullscreen></iframe>
-    </div>
-  `;
+.poster-card:hover .poster-img-wrap {
+  border-color: var(--red);
 }
 
-function castGrid(credits = {}) {
-  const cast = (credits.cast || []).slice(0, 12);
-  if (!cast.length) return '<div class="empty">Няма данни за актьорския състав.</div>';
-  return `
-    <div class="cast-grid">
-      ${cast.map(c => `
-        <div class="cast-card">
-          <img src="${img(c.profile_path, 'w185')}" alt="${escapeHtml(c.name)}" loading="lazy">
-          <div class="cast-name">${escapeHtml(c.name)}</div>
-          <div class="cast-role">${escapeHtml(c.character || '')}</div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+.poster-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-function movieJsonLd(data, url) {
-  const json = {
-    "@context": "https://schema.org",
-    "@type": "Movie",
-    "name": data.title,
-    "description": data.overview,
-    "image": img(data.poster_path, 'original'),
-    "datePublished": data.release_date,
-    "url": url,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": data.vote_average,
-      "ratingCount": data.vote_count || 1
-    }
-  };
-  return `<script type="application/ld+json">${JSON.stringify(json)}</script>`;
+.poster-rating {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
 }
 
-function tvJsonLd(data, url) {
-  const json = {
-    "@context": "https://schema.org",
-    "@type": "TVSeries",
-    "name": data.name,
-    "description": data.overview,
-    "image": img(data.poster_path, 'original'),
-    "startDate": data.first_air_date,
-    "url": url,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": data.vote_average,
-      "ratingCount": data.vote_count || 1
-    }
-  };
-  return `<script type="application/ld+json">${JSON.stringify(json)}</script>`;
+.poster-title {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
 }
 
-function slugify(title = '') {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, '')
-    .replace(/\s+/g, '-')
-    .slice(0, 60);
+.poster-year {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
-function img(path, size = 'w500') {
-  const IMG = 'https://image.tmdb.org/t/p/';
-  return path ? IMG + size + path : 'https://placehold.co/342x513/17171b/8d8a92?text=No+Image';
-}
+/* Footer */
+#footer { border-top: 1px solid var(--line); padding: 24px; margin-top: auto; background: var(--bg-alt); }
+.footer-inner { max-width: 1200px; margin: 0 auto; text-align: center; color: var(--muted); font-size: 12px; }
 
-module.exports = {
-  head,
-  layout,
-  posterCard,
-  genreRow,
-  trailerBlock,
-  castGrid,
-  escapeHtml,
-  movieJsonLd,
-  tvJsonLd,
-  DEFAULT_TITLE,
-  DEFAULT_DESC,
-  SITE_NAME,
-};
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .header-inner { flex-wrap: wrap; gap: 12px; }
+  .search-box { order: 3; max-width: 100%; width: 100%; }
+  .media-grid, .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  #main { padding: 16px; }
+}
