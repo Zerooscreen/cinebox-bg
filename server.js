@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { tmdb, img, slugify } = require('./lib/tmdb');
-const { head, layout, posterCard, genreRow, watchButtonBlock, castGrid, similarGrid, escapeHtml, movieJsonLd, tvJsonLd, sideBannerAd, nativeBannerAd, detailTitle, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
+const { head, layout, posterCard, genreRow, watchButtonBlock, trailerBlock, castGrid, similarGrid, escapeHtml, movieJsonLd, tvJsonLd, banner728x90, banner468x60, nativeBannerAd, detailTitle, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,7 +61,7 @@ async function renderHome(req, res, tab) {
         </div>
       </div>` : '';
 
-    const bodyHtml = heroHtml + `<div id="rows">${rowsHtml.join('')}</div>`;
+    const bodyHtml = heroHtml + banner468x60() + `<div id="rows">${rowsHtml.join('')}</div>`;
     const headHtml = head({
       title: DEFAULT_TITLE,
       description: DEFAULT_DESC,
@@ -86,9 +86,10 @@ app.get('/tv', (req, res) => renderHome(req, res, 'tv'));
 app.get('/movie/:id/:slug?', async (req, res) => {
   const { id } = req.params;
   try {
-    const [data, credits, similar] = await Promise.all([
+    const [data, credits, videos, similar] = await Promise.all([
       tmdb(`/movie/${id}`),
       tmdb(`/movie/${id}/credits`),
+      tmdb(`/movie/${id}/videos`),
       tmdb(`/movie/${id}/similar`),
     ]);
     
@@ -118,10 +119,12 @@ app.get('/movie/:id/:slug?', async (req, res) => {
         </div>
       </div>
       <div class="section-block"><h3>Сюжет</h3><div class="bio-text">${escapeHtml(data.overview) || 'Няма наличен сюжет.'}</div></div>
-      ${nativeBannerAd()}
+      ${trailerBlock(videos)}
+      ${banner728x90()}
       <div class="section-block"><h3>Актьорски състав</h3>${castGrid(credits)}</div>
+      ${nativeBannerAd()}
       ${similarGrid(similar.results, 'movie')}
-      ${sideBannerAd()}
+      ${banner468x60()}
       ${movieJsonLd(data, `${SITE_URL}/movie/${id}/${encodeURIComponent(correctSlug)}`)}
     `;
 
@@ -146,9 +149,10 @@ app.get('/movie/:id/:slug?', async (req, res) => {
 app.get('/tv/:id/:slug?', async (req, res) => {
   const { id } = req.params;
   try {
-    const [data, credits, similar] = await Promise.all([
+    const [data, credits, videos, similar] = await Promise.all([
       tmdb(`/tv/${id}`),
       tmdb(`/tv/${id}/credits`),
+      tmdb(`/tv/${id}/videos`),
       tmdb(`/tv/${id}/similar`),
     ]);
 
@@ -192,14 +196,16 @@ app.get('/tv/:id/:slug?', async (req, res) => {
         </div>
       </div>
       <div class="section-block"><h3>Сюжет</h3><div class="bio-text">${escapeHtml(data.overview) || 'Няма наличен сюжет.'}</div></div>
-      ${nativeBannerAd()}
+      ${trailerBlock(videos)}
+      ${banner728x90()}
       <div class="section-block"><h3>Актьорски състав</h3>${castGrid(credits)}</div>
+      ${nativeBannerAd()}
       <div class="section-block">
         <h3>Сезони и епизоди</h3>
         <div class="season-list" id="season-list">${seasonsHtml}</div>
       </div>
       ${similarGrid(similar.results, 'tv')}
-      ${sideBannerAd()}
+      ${banner468x60()}
       ${tvJsonLd(data, `${SITE_URL}/tv/${id}/${encodeURIComponent(correctSlug)}`)}
     `;
 
