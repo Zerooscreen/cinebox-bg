@@ -1,99 +1,690 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Search handling
-  const searchInput = document.getElementById('search-input');
-  const searchResults = document.getElementById('search-results');
+:root {
+  --bg: #141414;
+  --bg-card: #1f1f1f;
+  --text: #ffffff;
+  --text-muted: #b3b3b3;
+  --accent: #e50914;
+  --accent-hover: #f40612;
+  --border: #333333;
+}
 
-  if (searchInput && searchResults) {
-    let timeout = null;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-    searchInput.addEventListener('input', (e) => {
-      clearTimeout(timeout);
-      const query = e.target.value.trim();
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-      if (query.length < 2) {
-        searchResults.innerHTML = '';
-        searchResults.classList.remove('active');
-        return;
-      }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-      timeout = setTimeout(async () => {
-        try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-          const data = await res.json();
+/* Header */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
 
-          if (!data.results || data.results.length === 0) {
-            searchResults.innerHTML = '<div style="padding: 15px; text-align: center; font-size: 13px; color: #b3b3b3;">Няма намерени резултати</div>';
-            searchResults.classList.add('active');
-            return;
-          }
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 15px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
 
-          searchResults.innerHTML = data.results.map(item => `
-            <a href="/${item.type}/${item.id}/${encodeURIComponent(item.slug)}" class="search-item">
-              <img src="${item.poster}" alt="${item.title}">
-              <div class="search-item-info">
-                <div class="s-title">${item.title}</div>
-                <div class="s-year">${item.type === 'movie' ? 'Филм' : 'Сериал'} · ${item.year || 'Няма дата'}</div>
-              </div>
-            </a>
-          `).join('');
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
 
-          searchResults.classList.add('active');
-        } catch (err) {
-          console.error(err);
-        }
-      }, 300);
-    });
+.logo span {
+  color: var(--accent);
+}
 
-    document.addEventListener('click', (e) => {
-      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-        searchResults.classList.remove('active');
-      }
-    });
+/* Search Box */
+.search-box {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+#search-input {
+  width: 100%;
+  padding: 10px 16px;
+  background: #2b2b2b;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#search-input:focus {
+  border-color: var(--accent);
+}
+
+#search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1f1f1f;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-top: 5px;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1000;
+}
+
+#search-results.active {
+  display: block;
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.search-item:hover {
+  background: #2b2b2b;
+}
+
+.search-item img {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.search-item-info .s-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.search-item-info .s-year {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Nav Links */
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  padding: 5px 0;
+  position: relative;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--text);
+}
+
+.nav-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* Main Content */
+#main {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+/* Hero Section (Home) */
+#hero {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 450px;
+  display: flex;
+  align-items: flex-end;
+  padding: 40px;
+  margin-bottom: 50px;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+}
+
+.hero-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(20,20,20,0) 0%, rgba(20,20,20,0.8) 70%, #141414 100%);
+  z-index: 2;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 700px;
+}
+
+.hero-eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.hero-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.hero-overview {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.hero-btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.hero-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Rows & Grid */
+.row {
+  margin-bottom: 40px;
+}
+
+.row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.row-num {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.row-head h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+/* Poster Card */
+.poster-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.poster-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.poster-img-wrap {
+  position: relative;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  background: #2b2b2b;
+}
+
+.poster-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster-rating {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.75);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f5c518;
+}
+
+.poster-title {
+  padding: 10px 12px 2px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poster-year {
+  padding: 0 12px 12px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Back Button */
+.back-btn {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: var(--text);
+}
+
+/* Detail Hero */
+.detail-hero {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  gap: 40px;
+  padding: 40px;
+  align-items: center;
+  margin-bottom: 40px;
+  background: var(--bg-card);
+}
+
+.detail-poster {
+  position: relative;
+  z-index: 3;
+  width: 260px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+}
+
+.detail-poster img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+}
+
+.detail-info {
+  position: relative;
+  z-index: 3;
+  flex: 1;
+}
+
+.detail-eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.detail-title {
+  font-size: 38px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  line-height: 1.2;
+}
+
+.detail-orig {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.tagline {
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.m-item {
+  background: rgba(255,255,255,0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.m-item.star {
+  color: #f5c518;
+  font-weight: 700;
+}
+
+/* Sections & Blocks */
+.section-block {
+  margin-bottom: 40px;
+}
+
+.section-block h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+}
+
+.bio-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+/* Genres */
+.genre-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.genre-tag {
+  background: rgba(229, 9, 20, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Trailer */
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.empty-trailer, .empty-cast {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Cast Grid */
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 15px;
+}
+
+.cast-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+  padding-bottom: 12px;
+}
+
+.cast-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.cast-name {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cast-character {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Seasons & Episodes */
+.season-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.season-item {
+  background: var(--bg-card);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.season-item:hover {
+  border-color: var(--accent);
+}
+
+.season-head {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 20px;
+}
+
+.season-head img {
+  width: 45px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.season-head .s-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.season-head .s-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.season-head .chev {
+  margin-left: auto;
+  transition: transform 0.3s;
+  color: var(--text-muted);
+}
+
+.season-item.open .chev {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+
+.episode-panel {
+  display: none;
+  padding: 15px 20px;
+  background: #191919;
+  border-top: 1px solid var(--border);
+}
+
+.season-item.open .episode-panel {
+  display: block;
+}
+
+.episode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.episode-card {
+  display: flex;
+  gap: 15px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.episode-card img {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.episode-info {
+  flex: 1;
+}
+
+.episode-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.episode-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.episode-overview {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Ad Banners */
+.ad-banner {
+  width: 100%;
+  min-height: 90px;
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  margin: 30px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Footer */
+#footer {
+  border-top: 1px solid var(--border);
+  background: #0d0d0d;
+  padding: 25px 0;
+  text-align: center;
+}
+
+.footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 30px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .detail-hero {
+    flex-direction: column;
+    padding: 20px;
   }
-
-  // Season & Episode accordion handling
-  const seasonList = document.getElementById('season-list');
-  if (seasonList) {
-    seasonList.addEventListener('click', async (e) => {
-      const item = e.target.closest('.season-item');
-      if (!item) return;
-
-      item.classList.toggle('open');
-      const panel = item.querySelector('.episode-panel');
-
-      if (item.classList.contains('open') && panel.innerHTML.trim() === '') {
-        const tvId = item.dataset.tv;
-        const seasonNumber = item.dataset.season;
-
-        panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #b3b3b3; font-size: 13px;">Зареждане на епизодите...</div>';
-
-        try {
-          const res = await fetch(`/api/season/${tvId}/${seasonNumber}`);
-          const data = await res.json();
-
-          if (!data.episodes || data.episodes.length === 0) {
-            panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #b3b3b3; font-size: 13px;">Няма налични епизоди.</div>';
-            return;
-          }
-
-          panel.innerHTML = `
-            <div class="episode-grid">
-              ${data.episodes.map(ep => `
-                <div class="episode-card">
-                  <img src="${ep.still}" alt="${ep.name}" loading="lazy">
-                  <div class="episode-info">
-                    <div class="episode-title">${ep.number}. ${ep.name}</div>
-                    <div class="episode-meta">Излъчен на: ${ep.airDate || 'Неизвестно'} · ★ ${ep.rating}</div>
-                    <div class="episode-overview">${ep.overview ? ep.overview.slice(0, 120) + (ep.overview.length > 120 ? '...' : '') : 'Няма описания за този епизод.'}</div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `;
-        } catch (err) {
-          panel.innerHTML = '<div style="padding: 10px; text-align: center; color: #e50914; font-size: 13px;">Грешка при зареждане.</div>';
-        }
-      }
-    });
+  .detail-poster {
+    width: 180px;
+    margin: 0 auto;
   }
-});
+  #hero {
+    height: auto;
+    padding: 25px;
+  }
+  .hero-title {
+    font-size: 26px;
+  }
+  .header-inner {
+    padding: 12px 15px;
+  }
+  #main {
+    padding: 15px;
+  }
+}
