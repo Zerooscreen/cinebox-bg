@@ -51,12 +51,14 @@ section.row{ margin-bottom:44px; }
 .row-head .row-num{ color:var(--muted); font-size:13px; font-weight:700; }
 
 .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:18px; }
-.poster-card{ cursor:pointer; position:relative; display:block; }
+
+/* Perbaikan Kotak Poster agar tidak melar */
+.poster-card{ cursor:pointer; position:relative; display:flex; flex-direction:column; text-decoration:none; color:inherit; }
 .poster-frame{ position:relative; aspect-ratio:2/3; background:var(--card); overflow:hidden; border:1px solid var(--line); transition:transform .18s, border-color .18s; }
 .poster-card:hover .poster-frame{ transform:translateY(-4px); border-color:var(--red); }
 .poster-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
-.poster-badge{ position:absolute; top:6px; right:6px; background:rgba(0,0,0,.75); color:var(--gold); font-size:11px; font-weight:700; padding:2px 6px; display:flex; align-items:center; gap:3px; }
-.poster-title{ margin-top:8px; font-size:13px; font-weight:700; line-height:1.35; }
+.poster-badge{ position:absolute; top:6px; right:6px; background:rgba(0,0,0,.75); color:var(--gold); font-size:11px; font-weight:700; padding:2px 6px; display:flex; align-items:center; gap:3px; z-index:2; }
+.poster-title{ margin-top:8px; font-size:13px; font-weight:700; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .poster-sub{ font-size:11px; color:var(--muted); margin-top:2px; }
 
 .loading, .empty{ color:var(--muted); padding:40px 0; text-align:center; font-size:14px; }
@@ -122,10 +124,8 @@ footer a{ color:var(--muted); }
   .search-wrap{ order:3; max-width:100%; }
   main{ padding:0 20px 80px; }
 }
-/* ===========================
-   ACTION BUTTONS
-=========================== */
 
+/* ACTION BUTTONS */
 .action-buttons{
     display:flex;
     flex-wrap:wrap;
@@ -149,26 +149,11 @@ footer a{ color:var(--muted); }
     transition:.25s;
 }
 
-.btn-watch{
-    background:#e50914;
-}
-
-.btn-trailer{
-    background:#ff9800;
-}
-
-.btn-imdb{
-    background:#f5c518;
-    color:#111 !important;
-}
-
-.btn-tmdb{
-    background:#01b4e4;
-}
-
-.btn-share{
-    background:#16a34a;
-}
+.btn-watch{ background:#e50914; }
+.btn-trailer{ background:#ff9800; }
+.btn-imdb{ background:#f5c518; color:#111 !important; }
+.btn-tmdb{ background:#01b4e4; }
+.btn-share{ background:#16a34a; }
 
 .action-buttons a:hover,
 .action-buttons button:hover{
@@ -176,9 +161,8 @@ footer a{ color:var(--muted); }
     opacity:.9;
     box-shadow:0 6px 18px rgba(0,0,0,.35);
 }
-.watch-section{
-    margin:30px 0;
-}
+
+.watch-section{ margin:30px 0; }
 
 .btn-watch-bottom{
     display:block;
@@ -196,11 +180,9 @@ footer a{ color:var(--muted); }
     transition:.25s;
 }
 
-.btn-watch-bottom:hover{
-    background:#d90000;
-}
-/* ===== Similar Movies ===== */
+.btn-watch-bottom:hover{ background:#d90000; }
 
+/* Similar Movies */
 .similar-grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
@@ -229,6 +211,7 @@ footer a{ color:var(--muted); }
     font-size:14px;
     text-align:center;
 }
+
 /* Breadcrumb */
 .breadcrumb{
     max-width:1200px;
@@ -243,17 +226,10 @@ footer a{ color:var(--muted); }
     text-decoration:none;
 }
 
-.breadcrumb a:hover{
-    text-decoration:underline;
-}
+.breadcrumb a:hover{ text-decoration:underline; }
+.breadcrumb span{ color:#fff; }
 
-.breadcrumb span{
-    color:#fff;
-}
-.detail-overview{
-    margin:24px 0;
-}
-
+.detail-overview{ margin:24px 0; }
 .detail-overview h2{
     font-size:24px;
     color:#fff;
@@ -266,8 +242,4 @@ footer a{ color:var(--muted); }
     color:#ccc;
     line-height:1.9;
     font-size:16px;
-}
-
-.genre-row{
-    margin-top:24px;
 }
