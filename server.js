@@ -67,7 +67,7 @@ async function renderHome(req, res, tab) {
           <div class="hero-eyebrow">Тенденция на седмицата</div>
           <div class="hero-title">${escapeHtml(heroTitle)}</div>
           <div class="hero-overview">${escapeHtml(heroOverview).slice(0, 180)}${heroOverview.length > 180 ? '…' : ''}</div>
-          <a class="hero-btn" href="/${tab}/${hero.id}/${encodeURIComponent(slugify(heroTitle))}">Виж повече ▸</a>
+          <a class="hero-btn" href="/${tab}/${hero.id}/${encodeURIComponent(slugify(heroTitle) || 'film')}">Виж повече ▸</a>
         </div>
       </div>` : '';
 
@@ -103,12 +103,14 @@ app.get('/movie/:id/:slug?', async (req, res) => {
       tmdb(`/movie/${id}/credits`),
       tmdb(`/movie/${id}/videos`),
     ]);
-    const correctSlug = slugify(data.title);
-    if (req.params.slug !== correctSlug) {
-      return res.redirect(301, `/movie/${id}/${encodeURIComponent(correctSlug)}`);
+    
+    if (!data || !data.id) {
+      throw new Error('Movie not found');
     }
 
     const runtime = data.runtime ? `${Math.floor(data.runtime / 60)}ч ${data.runtime % 60}мин` : 'Няма данни';
+    const correctSlug = slugify(data.title) || 'film';
+
     const bodyHtml = `
       <a class="back-btn" href="/movie">← Назад</a>
       <div class="detail-hero">
@@ -168,10 +170,12 @@ app.get('/tv/:id/:slug?', async (req, res) => {
       tmdb(`/tv/${id}/credits`),
       tmdb(`/tv/${id}/videos`),
     ]);
-    const correctSlug = slugify(data.name);
-    if (req.params.slug !== correctSlug) {
-      return res.redirect(301, `/tv/${id}/${encodeURIComponent(correctSlug)}`);
+
+    if (!data || !data.id) {
+      throw new Error('TV show not found');
     }
+
+    const correctSlug = slugify(data.name) || 'serial';
 
     const seasons = (data.seasons || []).filter(s => s.season_number >= 0);
     const seasonsHtml = seasons.map(s => `
@@ -258,7 +262,7 @@ app.get('/api/search', async (req, res) => {
         title: r.title || r.name,
         year: (r.release_date || r.first_air_date || '').slice(0, 4),
         poster: img(r.poster_path, 'w92'),
-        slug: slugify(r.title || r.name),
+        slug: slugify(r.title || r.name) || 'media',
       }));
     res.json({ results });
   } catch (e) {
@@ -297,8 +301,8 @@ app.get('/sitemap.xml', async (req, res) => {
     const urls = [
       { loc: `${SITE_URL}/movie`, priority: '1.0', changefreq: 'daily' },
       { loc: `${SITE_URL}/tv`, priority: '1.0', changefreq: 'daily' },
-      ...[...mp.results, ...mt.results].map(m => ({ loc: `${SITE_URL}/movie/${m.id}/${encodeURIComponent(slugify(m.title))}`, priority: '0.7', changefreq: 'weekly' })),
-      ...[...tp.results, ...tt.results].map(t => ({ loc: `${SITE_URL}/tv/${t.id}/${encodeURIComponent(slugify(t.name))}`, priority: '0.7', changefreq: 'weekly' })),
+      ...[...mp.results, ...mt.results].map(m => ({ loc: `${SITE_URL}/movie/${m.id}/${encodeURIComponent(slugify(m.title) || 'film')}`, priority: '0.7', changefreq: 'weekly' })),
+      ...[...tp.results, ...tt.results].map(t => ({ loc: `${SITE_URL}/tv/${t.id}/${encodeURIComponent(slugify(t.name) || 'serial')}`, priority: '0.7', changefreq: 'weekly' })),
     ];
     const uniq = [...new Map(urls.map(u => [u.loc, u])).values()];
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
