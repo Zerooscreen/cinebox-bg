@@ -271,26 +271,29 @@ app.get('/api/season/:tvId/:seasonNumber', async (req, res) => {
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const [mp, mt, tp, tt] = await Promise.all([
-      tmdb('/movie/popular'),
-      tmdb('/movie/top_rated'),
-      tmdb('/tv/popular'),
-      tmdb('/tv/top_rated'),
+      tmdb('/movie/popular').catch(() => ({ results: [] })),
+      tmdb('/movie/top_rated').catch(() => ({ results: [] })),
+      tmdb('/tv/popular').catch(() => ({ results: [] })),
+      tmdb('/tv/top_rated').catch(() => ({ results: [] })),
     ]);
+
     const today = new Date().toISOString().slice(0, 10);
     const urls = [
       { loc: `${SITE_URL}/movie`, priority: '1.0', changefreq: 'daily' },
       { loc: `${SITE_URL}/tv`, priority: '1.0', changefreq: 'daily' },
-      ...[...mp.results, ...mt.results].map(m => ({ loc: `${SITE_URL}/movie/${m.id}/${encodeURIComponent(slugify(m.title) || 'film')}`, priority: '0.7', changefreq: 'weekly' })),
-      ...[...tp.results, ...tt.results].map(t => ({ loc: `${SITE_URL}/tv/${t.id}/${encodeURIComponent(slugify(t.name) || 'serial')}`, priority: '0.7', changefreq: 'weekly' })),
+      ...[...(mp.results || []), ...(mt.results || [])].map(m => ({ loc: `${SITE_URL}/movie/${m.id}/${encodeURIComponent(slugify(m.title) || 'film')}`, priority: '0.7', changefreq: 'weekly' })),
+      ...[...(tp.results || []), ...(tt.results || [])].map(t => ({ loc: `${SITE_URL}/tv/${t.id}/${encodeURIComponent(slugify(t.name) || 'serial')}`, priority: '0.7', changefreq: 'weekly' })),
     ];
+
     const uniq = [...new Map(urls.map(u => [u.loc, u])).values()];
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${uniq.map(u => `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`).join('\n')}
 </urlset>`;
+
     res.type('application/xml').send(xml);
   } catch (e) {
-    res.status(500).send('');
+    res.status(500).send('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
 });
 
