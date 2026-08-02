@@ -114,7 +114,7 @@ app.get('/movie/:id/:slug?', async (req, res) => {
             <span class="m-item">${escapeHtml(data.status || '')}</span>
           </div>
           ${genreRow(data.genres)}
-          ${watchButtonBlock()}
+          ${watchButtonBlock(data.id, data.title, 'movie')}
         </div>
       </div>
       <div class="section-block"><h3>Сюжет</h3><div class="bio-text">${escapeHtml(data.overview) || 'Няма наличен сюжет.'}</div></div>
@@ -188,7 +188,7 @@ app.get('/tv/:id/:slug?', async (req, res) => {
             <span class="m-item">${escapeHtml(data.status || '')}</span>
           </div>
           ${genreRow(data.genres)}
-          ${watchButtonBlock()}
+          ${watchButtonBlock(data.id, data.name, 'tv')}
         </div>
       </div>
       <div class="section-block"><h3>Сюжет</h3><div class="bio-text">${escapeHtml(data.overview) || 'Няма наличен сюжет.'}</div></div>
