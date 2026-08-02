@@ -267,6 +267,7 @@ app.get('/api/season/:tvId/:seasonNumber', async (req, res) => {
   }
 });
 
+// --------- SITEMAP ---------
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const [mp, mt, tp, tt] = await Promise.all([
@@ -293,6 +294,7 @@ ${uniq.map(u => `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><changefre
   }
 });
 
+// --------- ROBOTS.TXT ---------
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`);
 });
