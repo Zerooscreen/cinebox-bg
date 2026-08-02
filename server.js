@@ -1,11 +1,10 @@
 const express = require('express');
 const path = require('path');
 const { tmdb, img, slugify } = require('./lib/tmdb');
-const { head, layout, posterCard, genreRow, trailerBlock, castGrid, escapeHtml, movieJsonLd, tvJsonLd, sideBannerAd, nativeBannerAd, detailTitle, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
+const { head, layout, posterCard, genreRow, trailerBlock, castGrid, similarGrid, escapeHtml, movieJsonLd, tvJsonLd, sideBannerAd, nativeBannerAd, detailTitle, DEFAULT_TITLE, DEFAULT_DESC, SITE_NAME } = require('./lib/render');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 const SITE_URL = process.env.SITE_URL || 'https://cinebox-bg.up.railway.app';
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -31,7 +30,6 @@ function seoDescription(title, year, genreNames) {
   return `Сюжет, актьорски състав, оценка и официален трейлър на ${title} в CineBox. ${genrePart}${yearPart}цялата информация на едно място.`;
 }
 
-// ---------- HOME (/, /movie, /tv) ----------
 async function renderHome(req, res, tab) {
   try {
     const heroData = await tmdb(tab === 'movie' ? '/trending/movie/week' : '/trending/tv/week');
@@ -64,7 +62,6 @@ async function renderHome(req, res, tab) {
       </div>` : '';
 
     const bodyHtml = heroHtml + `<div id="rows">${rowsHtml.join('')}</div>`;
-
     const headHtml = head({
       title: DEFAULT_TITLE,
       description: DEFAULT_DESC,
@@ -86,19 +83,17 @@ app.get('/', (req, res) => renderHome(req, res, 'movie'));
 app.get('/movie', (req, res) => renderHome(req, res, 'movie'));
 app.get('/tv', (req, res) => renderHome(req, res, 'tv'));
 
-// ---------- ДЕТАЙЛИ: /movie/:id/:slug? ----------
 app.get('/movie/:id/:slug?', async (req, res) => {
   const { id } = req.params;
   try {
-    const [data, credits, videos] = await Promise.all([
+    const [data, credits, videos, similar] = await Promise.all([
       tmdb(`/movie/${id}`),
       tmdb(`/movie/${id}/credits`),
       tmdb(`/movie/${id}/videos`),
+      tmdb(`/movie/${id}/similar`),
     ]);
     
-    if (!data || !data.id) {
-      throw new Error('Movie not found');
-    }
+    if (!data || !data.id) throw new Error('Movie not found');
 
     const runtime = data.runtime ? `${Math.floor(data.runtime / 60)}ч ${data.runtime % 60}мин` : 'Няма данни';
     const correctSlug = slugify(data.title) || 'film';
@@ -126,6 +121,7 @@ app.get('/movie/:id/:slug?', async (req, res) => {
       ${nativeBannerAd()}
       <div class="section-block"><h3>Трейлър</h3>${trailerBlock(videos)}</div>
       <div class="section-block"><h3>Актьорски състав</h3>${castGrid(credits)}</div>
+      ${similarGrid(similar.results, 'movie')}
       ${sideBannerAd()}
       ${movieJsonLd(data, `${SITE_URL}/movie/${id}/${encodeURIComponent(correctSlug)}`)}
     `;
@@ -141,34 +137,26 @@ app.get('/movie/:id/:slug?', async (req, res) => {
     res.send(layout({ headHtml, bodyHtml, activeTab: 'movie' }));
   } catch (e) {
     res.status(404).send(layout({
-      headHtml: head({
-        title: 'Филмът не е намерен · CineBox',
-        description: DEFAULT_DESC,
-        url: `${SITE_URL}/movie/${id}`,
-        robots: 'noindex, nofollow',
-      }),
+      headHtml: head({ title: 'Филмът не е намерен · CineBox', description: DEFAULT_DESC, url: `${SITE_URL}/movie/${id}`, robots: 'noindex, nofollow' }),
       bodyHtml: `<a class="back-btn" href="/movie">← Назад</a><div class="empty">Този филм не беше намерен.</div>`,
       activeTab: 'movie',
     }));
   }
 });
 
-// ---------- ДЕТАЙЛИ: /tv/:id/:slug? ----------
 app.get('/tv/:id/:slug?', async (req, res) => {
   const { id } = req.params;
   try {
-    const [data, credits, videos] = await Promise.all([
+    const [data, credits, videos, similar] = await Promise.all([
       tmdb(`/tv/${id}`),
       tmdb(`/tv/${id}/credits`),
       tmdb(`/tv/${id}/videos`),
+      tmdb(`/tv/${id}/similar`),
     ]);
 
-    if (!data || !data.id) {
-      throw new Error('TV show not found');
-    }
+    if (!data || !data.id) throw new Error('TV show not found');
 
     const correctSlug = slugify(data.name) || 'serial';
-
     const seasons = (data.seasons || []).filter(s => s.season_number >= 0);
     const seasonsHtml = seasons.map(s => `
       <div class="season-item" data-season="${s.season_number}" data-tv="${id}">
@@ -212,6 +200,7 @@ app.get('/tv/:id/:slug?', async (req, res) => {
         <h3>Сезони и епизоди</h3>
         <div class="season-list" id="season-list">${seasonsHtml}</div>
       </div>
+      ${similarGrid(similar.results, 'tv')}
       ${sideBannerAd()}
       ${tvJsonLd(data, `${SITE_URL}/tv/${id}/${encodeURIComponent(correctSlug)}`)}
     `;
@@ -227,19 +216,13 @@ app.get('/tv/:id/:slug?', async (req, res) => {
     res.send(layout({ headHtml, bodyHtml, activeTab: 'tv' }));
   } catch (e) {
     res.status(404).send(layout({
-      headHtml: head({
-        title: 'Сериалът не е намерен · CineBox',
-        description: DEFAULT_DESC,
-        url: `${SITE_URL}/tv/${id}`,
-        robots: 'noindex, nofollow',
-      }),
+      headHtml: head({ title: 'Сериалът не е намерен · CineBox', description: DEFAULT_DESC, url: `${SITE_URL}/tv/${id}`, robots: 'noindex, nofollow' }),
       bodyHtml: `<a class="back-btn" href="/tv">← Назад</a><div class="empty">Този сериал не беше намерен.</div>`,
       activeTab: 'tv',
     }));
   }
 });
 
-// ---------- API proxy ----------
 app.get('/api/search', async (req, res) => {
   try {
     const q = req.query.q || '';
@@ -280,7 +263,6 @@ app.get('/api/season/:tvId/:seasonNumber', async (req, res) => {
   }
 });
 
-// ---------- sitemap.xml ----------
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const [mp, mt, tp, tt] = await Promise.all([
